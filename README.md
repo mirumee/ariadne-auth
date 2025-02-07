@@ -1,0 +1,118 @@
+### Run test app 
+
+#### To run test application use: `hatch run ariadne_auth`
+Note that `user_id` is hardcoded in `app.py:104`
+
+
+# How to use:
+
+### Set your Authorization Extension with global permissions
+```python
+from graphql import GraphQLResolveInfo
+from ariadne_auth.authz import AuthorizationExtension
+from ariadne_auth.types import HasPermissions
+
+
+# Define a function that returns the permission object
+def get_permission_obj(info: GraphQLResolveInfo) -> HasPermissions:
+    return info.context["my_permission_obj"]
+
+# Instantiate the AuthorizationExtension
+authz = AuthorizationExtension(permission_obj=get_permission_obj)
+
+# Set list of permissions required for all resolvers 
+authz.set_required_global_permissions(["user:logged_in"])
+```
+
+
+### Configure resolvers
+```python
+query = QueryType()
+ship = ObjectType("Ship")
+faction = ObjectType("Faction")
+
+# Set additional required permissions for specific resolvers
+@query.field("rebels")
+@authz.require_permissions(permissions=["read:rebels"])
+async def resolve_rebels(*_):
+    return FACTIONS[0]
+
+
+@query.field("empire")
+@authz.require_permissions(permissions=["read:empire"], ignore_global_permissions=False)
+async def resolve_empire(*_):
+    return FACTIONS[1]
+
+
+
+# Disable global permissions for specific resolver
+@query.field("ships")
+@authz.require_permissions(permissions=[], ignore_global_permissions=True)
+async def resolve_ships(obj, *_):
+    return SHIPS
+
+# Note the global permission is set on default_field_resolver it requires to disable permissions explicity
+@ship.field("name")
+@authz.require_permissions(permissions=[], ignore_global_permissions=True)
+async def resolve_ship_name(obj, *_):
+    return obj["name"]
+
+
+# Depends on the faction, additional permissions are required
+@faction.field("ships")
+async def resolve_faction_ships(faction_obj, info: GraphQLResolveInfo, *_):
+    _auth = info.context["auth"]
+    if (
+        faction_obj["name"] == "Alliance to Restore the Republic"
+    ):  # Rebels faction requires additional perm to read ships
+        _auth.assert_permissions(["read:ships"])
+
+    return [_ship for _ship in SHIPS if _ship["factionId"] == faction_obj["id"]]
+
+```
+
+
+### Add your extension to Ariadne GraphQL instance
+```python
+app = GraphQL(
+    schema,
+    http_handler=GraphQLHTTPHandler(extensions=[authz]),  # add the authz extension
+)
+```
+
+
+
+### Example request
+for user with permissions
+```
+    permissions=[
+        "user:logged_in",
+        "read:empire",
+        "read:rebels",
+    ],  # can't read rebels ships
+```
+```graphql
+query {
+  empire{
+    id
+    name
+    ships {
+      id
+      name
+    }
+  }
+  rebels{
+    id
+    name
+    ships {
+      name
+    }
+  }
+  ships {
+    name
+  }
+}
+```
+
+
+
