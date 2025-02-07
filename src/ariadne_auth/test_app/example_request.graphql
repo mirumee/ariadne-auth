@@ -1,0 +1,20 @@
+query {
+  empire{
+    id
+    name
+    ships {
+      id
+      name
+    }
+  }
+  rebels{
+    id
+    name
+    ships {
+      name
+    }
+  }
+  ships {
+    name
+  }
+}

@@ -1,0 +1,27 @@
+interface Node {
+  id: ID!
+}
+
+type Faction implements Node {
+  id: ID!
+  name: String
+
+  """ required permissions: ["read:ships"] but only for rebels """
+  ships: [Ship!]
+}
+
+type Ship implements Node {
+  id: ID!
+  name: String
+}
+
+
+type Query {
+  """ required permissions: ["read:rebels"] + global user:logged_in"""
+  rebels: Faction
+  """ required permissions: ["read:empire"] + global user:logged_in"""
+  empire: Faction
+
+  """ disabled global permission """
+  ships: [Ship]
+}
