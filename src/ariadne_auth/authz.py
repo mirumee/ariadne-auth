@@ -1,6 +1,6 @@
 from typing import Any, Callable
 
-from ariadne.types import Extension, Resolver
+from ariadne.types import ContextValue, Extension, Resolver
 from graphql import GraphQLResolveInfo
 from graphql.pyutils import is_awaitable
 
@@ -24,10 +24,10 @@ class AuthorizationExtension(Extension):
             return self.resolver(obj, info, *args, **kwargs)
 
     def __init__(
-        self, permission_obj: Callable[[GraphQLResolveInfo], HasPermissions]
+        self, get_permission_obj: Callable[[GraphQLResolveInfo], HasPermissions]
     ) -> None:
         self.global_permissions: PermissionsList = []
-        self.get_permission_obj = permission_obj
+        self.get_permission_obj = get_permission_obj
 
     def __call__(self, *args, **kwargs) -> "AuthorizationExtension":
         # make a new instance for each request to make it safe across requests
@@ -67,14 +67,15 @@ class AuthorizationExtension(Extension):
 
         return decorator
 
-    def assert_permissions(self, permissions: PermissionsList) -> None:
-        if not self._perm_obj.has_permissions(permissions):
+    @staticmethod
+    def assert_permissions(
+        permission_object: HasPermissions, permissions: PermissionsList
+    ) -> None:
+        if not permission_object.has_permissions(permissions):
             raise GraphQLErrorAuthorizationError()
 
-    def _attach_auth_to_info_context(self, info: GraphQLResolveInfo) -> None:
-        if not info.context.get("auth"):
-            self._perm_obj = self.get_permission_obj(info)
-            info.context["auth"] = self
+    def generate_authz_context(self, request: ContextValue):
+        return {"auth": self}
 
     def resolve(
         self,
@@ -84,7 +85,6 @@ class AuthorizationExtension(Extension):
         *args,
         **kwargs,
     ):
-        self._attach_auth_to_info_context(info)
         if not isinstance(next_, self.PermissionChecker) and self.global_permissions:
             next_ = self.PermissionChecker(
                 next_, self.permissions_policy_fn(self.global_permissions)
