@@ -1,10 +1,10 @@
 from typing import Protocol
 
+from typing_extensions import TypeAlias
 
-type Permission = str
-type PermissionsList = list[Permission]
+Permission: TypeAlias = str
+PermissionsList: TypeAlias = list[Permission]
+
 
 class HasPermissions(Protocol):
-    def has_permissions(self, permissions: PermissionsList) -> bool:
-        ...
-
+    def has_permissions(self, permissions: PermissionsList) -> bool: ...
