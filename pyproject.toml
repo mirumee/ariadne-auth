@@ -22,7 +22,8 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "ariadne"
+  "ariadne",
+  "typing_extensions"
 ]
 
 [project.optional-dependencies]
@@ -30,9 +31,8 @@ types = ["mypy>=1.0.0",]
 dev = [
     'rich',
     'uvicorn',
-  'starlette',
-  'pytest',
-  'ipdb',
+    'starlette',
+    'ipdb',
 ]
 
 
@@ -41,6 +41,8 @@ path = "src/ariadne_auth/__about__.py"
 
 
 # Environment configuration
+
+## Default environment
 [tool.hatch.envs.default]
 features = ["dev", "types"]
 
@@ -50,6 +52,16 @@ PYTHONBREAKPOINT = "ipdb.set_trace"
 [tool.hatch.envs.default.scripts]
 ariadne_auth = "python -m ariadne_auth.test_app.__main__"
 
+## Test environment
+[tool.hatch.envs.hatch-test]
+extra-dependencies = [
+    'pytest-mock'
+]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+## Types environment
 [tool.hatch.envs.types]
 features = ["types"]
 
