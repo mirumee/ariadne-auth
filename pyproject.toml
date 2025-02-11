@@ -29,12 +29,11 @@ dependencies = [
 [project.optional-dependencies]
 types = ["mypy>=1.0.0",]
 dev = [
-    'rich',
-    'uvicorn',
-    'starlette',
-    'ipdb',
+    "rich",
+    "uvicorn",
+    "starlette",
+    "ipdb",
 ]
-
 
 [tool.hatch.version]
 path = "src/ariadne_auth/__about__.py"
@@ -49,14 +48,25 @@ features = ["dev", "types"]
 [tool.hatch.envs.default.env-vars]
 PYTHONBREAKPOINT = "ipdb.set_trace"
 
+[tool.hatch.envs.hatch-test.env-vars]
+PYTHONBREAKPOINT = "ipdb.set_trace"
+
 [tool.hatch.envs.default.scripts]
 ariadne_auth = "python -m ariadne_auth.test_app.__main__"
+check = [
+    "hatch fmt",
+    "hatch test -a -p",
+    "hatch test --cover",
+    "hatch run types:check",
+]
+
 
 ## Test environment
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
-    'pytest-mock'
+    "pytest-cov", "pytest-mock", "anyio[trio]", "ipdb"
 ]
+extra-args = ["-s"]  # to stop on ipdb breakpoint
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
@@ -65,14 +75,8 @@ python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
 [tool.hatch.envs.types]
 features = ["types"]
 
-
 [tool.hatch.envs.types.scripts]
-check = [
-    "hatch fmt",
-    "hatch test -a -p",
-    "hatch test --cover",
-    "hatch run types:check",
-]
+check = "mypy . --install-types --non-interactive"
 
 # Tool configuration
 
@@ -83,9 +87,9 @@ check = [
 ## Types configuration
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.9"
 files = ["src/**/*.py"]
-exclude = "tests/.*"
+exclude = ["tests/.*", "test_app/.*"]
 warn_redundant_casts = true
 warn_unused_ignores = true
 disallow_any_generics = true
@@ -143,7 +147,7 @@ ban-relative-imports = "all"
 max-complexity = 10
 
 [tool.ruff.lint.isort]
-known-first-party = ["smyth"]
+known-first-party = ["ariadne_auth"]
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
