@@ -48,9 +48,6 @@ features = ["dev", "types"]
 [tool.hatch.envs.default.env-vars]
 PYTHONBREAKPOINT = "ipdb.set_trace"
 
-[tool.hatch.envs.hatch-test.env-vars]
-PYTHONBREAKPOINT = "ipdb.set_trace"
-
 [tool.hatch.envs.default.scripts]
 ariadne_auth = "python -m ariadne_auth.test_app.__main__"
 check = [
@@ -62,6 +59,10 @@ check = [
 
 
 ## Test environment
+[tool.hatch.envs.hatch-test.env-vars]
+PYTHONBREAKPOINT = "ipdb.set_trace"
+
+
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
     "pytest-cov", "pytest-mock", "anyio[trio]", "ipdb"
