@@ -7,6 +7,7 @@ Note that `user_id` is hardcoded in `app.py:104`
 # How to use:
 
 ### Set your Authorization Extension with global permissions
+
 ```python
 from graphql import GraphQLResolveInfo
 from ariadne_auth.authz import AuthorizationExtension
@@ -17,8 +18,9 @@ from ariadne_auth.types import HasPermissions
 def get_permission_obj(info: GraphQLResolveInfo) -> HasPermissions:
     return info.context["my_permission_obj"]
 
+
 # Instantiate the AuthorizationExtension
-authz = AuthorizationExtension(get_permission_obj=get_permission_obj)
+authz = AuthorizationExtension(permissions_object_provider_fn=get_permission_obj)
 
 # Set list of permissions required for all resolvers 
 authz.set_required_global_permissions(["user:logged_in"])
@@ -56,6 +58,22 @@ async def resolve_ships(obj, *_):
 @authz.require_permissions(permissions=[], ignore_global_permissions=True)
 async def resolve_ship_name(obj, *_):
     return obj["name"]
+```
+
+If needed you may also overwrite the function to get the permission object
+```python
+def get_ship_permissions(info: GraphQLResolveInfo) -> HasPermissions:
+    return info.context["my_ship_permission_obj"]
+
+@ship.field("name")
+@authz.require_permissions(
+    permissions=[],
+    ignore_global_permissions=True,
+    permissions_object_provider_fn=get_ship_permissions
+)
+async def resolve_ship_name(obj, *_):
+    return obj["name"]
+
 ```
 
 

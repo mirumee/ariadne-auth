@@ -1,8 +1,7 @@
 from starlette.applications import Starlette
-from starlette.routing import  Mount
+from starlette.routing import Mount
 
-from src.ariadne_auth.test_app.app import app as gql_app
-
+from ariadne_auth.test_app.app import app as gql_app
 
 app = Starlette(
     routes=[

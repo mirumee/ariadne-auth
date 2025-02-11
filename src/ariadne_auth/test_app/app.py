@@ -36,7 +36,7 @@ def get_permission_obj(info: GraphQLResolveInfo) -> HasPermissions:
     return info.context["user"]
 
 
-authz = AuthorizationExtension(get_permission_obj=get_permission_obj)
+authz = AuthorizationExtension(permissions_object_provider_fn=get_permission_obj)
 authz.set_required_global_permissions(["user:logged_in"])
 
 
@@ -75,7 +75,9 @@ async def resolve_faction_ships(faction_obj, info: GraphQLResolveInfo, *_):
     if (
         faction_obj["name"] == "Alliance to Restore the Republic"
     ):  # Rebels faction requires additional perm to read ships
-        _auth.assert_permissions(_auth.get_permission_obj(info), ["read:ships"])
+        _auth.assert_permissions(
+            _auth.permissions_object_provider_fn(info), ["read:ships"]
+        )
 
     return [_ship for _ship in SHIPS if _ship["factionId"] == faction_obj["id"]]
 
