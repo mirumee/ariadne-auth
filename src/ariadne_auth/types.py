@@ -17,5 +17,5 @@ PermissionsResolver = TypeAliasType(
 
 OptionalPermissionsResolver = TypeAliasType(
     "OptionalPermissionsResolver",
-    Union[Callable[[GraphQLResolveInfo], HasPermissions], None],
+    Union[PermissionsResolver, None],
 )
