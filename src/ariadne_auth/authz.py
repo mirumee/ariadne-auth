@@ -1,3 +1,4 @@
+from inspect import iscoroutinefunction
 from typing import Any, Callable
 
 from ariadne.types import ContextValue, Extension, Resolver
@@ -116,14 +117,13 @@ class AuthorizationExtension(Extension):
                 ),
             )
 
-        if is_awaitable(next_):
-
-            async def async_my_extension() -> Any:
-                result = await next_(obj, info, **kwargs)
-                if is_awaitable(result):
-                    result = await result
-                return result
-
-            return async_my_extension()
-        else:
+        if not iscoroutinefunction(next_):
             return next_(obj, info, **kwargs)
+
+        async def async_my_extension() -> Any:
+            result = await next_(obj, info, **kwargs)
+            if is_awaitable(result):
+                result = await result
+            return result
+
+        return async_my_extension()

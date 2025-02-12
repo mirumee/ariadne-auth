@@ -120,6 +120,7 @@ branch = true
 parallel = true
 omit = [
   "src/ariadne_auth/__about__.py",
+  "src/ariadne_auth/test_app/*"
 ]
 
 [tool.coverage.paths]

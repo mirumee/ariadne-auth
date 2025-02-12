@@ -163,6 +163,15 @@ def test_resolve_no_global_permissions_no_decorated(test_authz: AuthorizationExt
     assert test_authz.resolve(resolver, None, None) == "Hello, World!"
 
 
+def test_resolve_global_permissions_default_resolver(
+    test_authz: AuthorizationExtension,
+):
+    test_authz.set_required_global_permissions(["read:Comments"])
+
+    with pytest.raises(GraphQLErrorAuthorizationError):
+        assert test_authz.resolve(resolver, None, None)
+
+
 async def test_resolve_async_resolver(test_authz: AuthorizationExtension):
     assert (
         await test_authz.resolve(async_resolver, None, None)
