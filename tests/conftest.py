@@ -1,4 +1,5 @@
 import dataclasses
+from typing import Union
 
 import pytest
 
@@ -14,22 +15,35 @@ class PermissionObject:
         return all(p in self.permissions for p in permissions)
 
 
-def permission_object_factory(permissions: PermissionsList) -> PermissionObject:
-    return PermissionObject(permissions=permissions)
+@dataclasses.dataclass
+class AsyncPermissionObject:
+    permissions: list[str]
+
+    async def has_permissions(self, permissions: list[str]) -> bool:
+        return all(p in self.permissions for p in permissions)
+
+
+def permissions_object_factory(
+    permissions: PermissionsList, async_has_permissions: bool = False
+) -> Union[AsyncPermissionObject, PermissionObject]:
+    perm_obj = AsyncPermissionObject if async_has_permissions else PermissionObject
+    return perm_obj(permissions=permissions)
 
 
 @pytest.fixture
 def no_permissions_object() -> PermissionObject:
-    return permission_object_factory([])
+    return permissions_object_factory([], async_has_permissions=False)
 
 
 @pytest.fixture
 def read_comments_permissions_object() -> PermissionObject:
-    return permission_object_factory(["read:Comments"])
+    return permissions_object_factory(["read:Comments"])
 
 
 @pytest.fixture
 def test_authz() -> AuthorizationExtension:
     return AuthorizationExtension(
-        permissions_object_provider_fn=lambda _: permission_object_factory([])
+        permissions_object_provider_fn=lambda _: permissions_object_factory(
+            [], async_has_permissions=False
+        )
     )

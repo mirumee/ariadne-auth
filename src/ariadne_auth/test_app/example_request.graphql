@@ -16,5 +16,11 @@ query {
   }
   ships {
     name
+    inDock
+  }
+
+  shipsInDock {
+    name
+    inDock
   }
 }

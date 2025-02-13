@@ -20,15 +20,38 @@ BASE_DIR = Path(__file__).parent
 schema = load_schema_from_path(BASE_DIR / "schema.graphql")
 
 
+@dataclasses.dataclass
+class HasPermissionsObj:
+    permissions: list[str]
+
+    async def has_permissions(self, permissions: PermissionsList) -> bool:
+        return all(permission in self.permissions for permission in permissions)
+
+
 # Prepare object with required has_permissions method
 @dataclasses.dataclass
-class User:
+class User(HasPermissionsObj):
     id: int
     username: str
-    permissions: list[str]
+
+
+@dataclasses.dataclass
+class Dock(HasPermissionsObj):
+    name: str
 
     def has_permissions(self, permissions: PermissionsList) -> bool:
         return all(permission in self.permissions for permission in permissions)
+
+
+async def get_dock_as_permission_object_async(
+    info: GraphQLResolveInfo,
+) -> HasPermissionsObj:
+    return Dock(
+        name="Dock",
+        permissions=[
+            "read:shipsInDock",
+        ],
+    )
 
 
 # Configure AuthorizationExtension
@@ -45,8 +68,22 @@ ship = ObjectType("Ship")
 faction = ObjectType("Faction")
 
 
+@query.field("shipsInDock")
+@authz.require_permissions(
+    permissions=["read:shipsInDock"],
+    ignore_global_permissions=True,
+    permissions_object_provider_fn=get_dock_as_permission_object_async,
+)
+def resolve_ships_in_dock(obj, *_):
+    return [_ship for _ship in SHIPS if _ship["in_dock"]]
+
+
 @query.field("ships")
-@authz.require_permissions(permissions=[], ignore_global_permissions=True)
+@authz.require_permissions(
+    permissions=[],
+    ignore_global_permissions=True,
+    permissions_object_provider_fn=get_permission_obj,
+)
 async def resolve_ships(obj, *_):
     return SHIPS
 
@@ -55,6 +92,12 @@ async def resolve_ships(obj, *_):
 @authz.require_permissions(permissions=[], ignore_global_permissions=True)
 async def resolve_ship_name(obj, *_):
     return obj["name"]
+
+
+@ship.field("inDock")
+@authz.require_permissions(permissions=[], ignore_global_permissions=True)
+async def resolve_ship_in_dock(obj, *_):
+    return obj["in_dock"]
 
 
 @query.field("rebels")
@@ -75,7 +118,7 @@ async def resolve_faction_ships(faction_obj, info: GraphQLResolveInfo, *_):
     if (
         faction_obj["name"] == "Alliance to Restore the Republic"
     ):  # Rebels faction requires additional perm to read ships
-        _auth.assert_permissions(
+        await _auth.assert_permissions_async(
             _auth.permissions_object_provider_fn(info), ["read:ships"]
         )
 

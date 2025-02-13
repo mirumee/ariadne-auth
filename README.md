@@ -18,6 +18,10 @@ from ariadne_auth.types import HasPermissions
 def get_permission_obj(info: GraphQLResolveInfo) -> HasPermissions:
     return info.context["my_permission_obj"]
 
+# it can be also an async function
+async def get_permission_obj_async(info: GraphQLResolveInfo) -> HasPermissions:
+    return info.context["my_permission_obj"]
+
 
 # Instantiate the AuthorizationExtension
 authz = AuthorizationExtension(permissions_object_provider_fn=get_permission_obj)
@@ -86,6 +90,8 @@ app = GraphQL(
 ```
  
 You may also pass `authz` instance into info.context to use it directly 
+
+use `_auth.assert_permissions` or `await _auth.assert_permissions_async` to check permissions in your resovlers
 ```python
 # Depends on the faction, additional permissions are required
 @faction.field("ships")

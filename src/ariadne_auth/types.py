@@ -1,3 +1,4 @@
+from collections.abc import Awaitable
 from typing import Callable, Protocol, Union
 
 from graphql import GraphQLResolveInfo
@@ -11,8 +12,18 @@ class HasPermissions(Protocol):
     def has_permissions(self, permissions: PermissionsList) -> bool: ...
 
 
+class AsyncHasPermissions(Protocol):
+    async def has_permissions(
+        self, permissions: PermissionsList
+    ) -> Awaitable[bool]: ...
+
+
+HasPermissionsObject = TypeAliasType(
+    "HasPermissionsObject", Union[HasPermissions, AsyncHasPermissions]
+)
+
 PermissionsResolver = TypeAliasType(
-    "PermissionsResolver", Callable[[GraphQLResolveInfo], HasPermissions]
+    "PermissionsResolver", Callable[[GraphQLResolveInfo], HasPermissionsObject]
 )
 
 OptionalPermissionsResolver = TypeAliasType(

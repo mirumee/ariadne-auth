@@ -13,6 +13,7 @@ type Faction implements Node {
 type Ship implements Node {
   id: ID!
   name: String
+  inDock: Boolean!
 }
 
 
@@ -24,4 +25,7 @@ type Query {
 
   """ disabled global permission """
   ships: [Ship]
+
+  """ custom behaviour: disabled global, required permissions: ["read:shipsInDock"], permission object is a dock """
+  shipsInDock: [Ship]
 }

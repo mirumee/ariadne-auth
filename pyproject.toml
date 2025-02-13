@@ -72,7 +72,7 @@ PYTHONBREAKPOINT = "ipdb.set_trace"
 
 [tool.hatch.envs.hatch-test]
 extra-dependencies = [
-    "pytest-cov", "pytest-mock", "anyio[trio]", "ipdb"
+    "pytest-cov", "pytest-mock", "pytest-asyncio", "ipdb"
 ]
 extra-args = ["-s"]  # to stop on ipdb breakpoint
 
@@ -91,6 +91,7 @@ check = "mypy . --install-types --non-interactive"
 ## Pytest configuration
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 
 ## Types configuration
 

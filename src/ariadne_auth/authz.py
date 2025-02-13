@@ -1,3 +1,4 @@
+from collections.abc import Coroutine
 from inspect import iscoroutinefunction
 from typing import Any, Callable
 
@@ -7,6 +8,7 @@ from graphql.pyutils import is_awaitable
 
 from ariadne_auth.exceptions import GraphQLErrorAuthorizationError
 from ariadne_auth.types import (
+    AsyncHasPermissions,
     HasPermissions,
     OptionalPermissionsResolver,
     PermissionsList,
@@ -24,11 +26,18 @@ class AuthorizationExtension(Extension):
             self.resolver = resolver
             self.permissions_policy_fn = permissions_policy_fn
 
-        def __call__(
+        async def __call__(
             self, obj: Any, info: GraphQLResolveInfo, *args: Any, **kwargs: Any
         ) -> Any:
-            if not self.permissions_policy_fn(obj, info, *args, **kwargs):
+            has_permissions = self.permissions_policy_fn(obj, info, *args, **kwargs)
+            if is_awaitable(has_permissions):
+                has_permissions = await has_permissions
+
+            if not has_permissions:
                 raise GraphQLErrorAuthorizationError()
+
+            if iscoroutinefunction(self.resolver):
+                return await self.resolver(obj, info, *args, **kwargs)
             return self.resolver(obj, info, *args, **kwargs)
 
     def __init__(self, permissions_object_provider_fn: PermissionsResolver) -> None:
@@ -51,10 +60,15 @@ class AuthorizationExtension(Extension):
         self,
         permissions: PermissionsList,
         permissions_object_provider_fn: PermissionsResolver,
-    ) -> Callable[..., Any]:
-        def inner(obj: Any, info: GraphQLResolveInfo, **kwargs: Any) -> bool:
-            perm_obj = permissions_object_provider_fn(info)
-            return perm_obj.has_permissions(permissions)
+    ) -> Callable[..., Coroutine[Any, Any, bool]]:
+        async def inner(obj: Any, info: GraphQLResolveInfo, **kwargs: Any) -> bool:
+            if iscoroutinefunction(permissions_object_provider_fn):
+                perm_obj = await permissions_object_provider_fn(info)
+            else:
+                perm_obj = permissions_object_provider_fn(info)
+            if iscoroutinefunction(perm_obj.has_permissions):
+                return await perm_obj.has_permissions(permissions)  # type: ignore[no-any-return]
+            return perm_obj.has_permissions(permissions)  # type: ignore[no-any-return]
 
         return inner
 
@@ -95,6 +109,13 @@ class AuthorizationExtension(Extension):
         permission_object: HasPermissions, permissions: PermissionsList
     ) -> None:
         if not permission_object.has_permissions(permissions):
+            raise GraphQLErrorAuthorizationError()
+
+    @staticmethod
+    async def assert_permissions_async(
+        permission_object: AsyncHasPermissions, permissions: PermissionsList
+    ) -> None:
+        if not await permission_object.has_permissions(permissions):
             raise GraphQLErrorAuthorizationError()
 
     def generate_authz_context(
