@@ -7,6 +7,7 @@ Note that `user_id` is hardcoded in `app.py:104`
 # How to use:
 
 ### Set your Authorization Extension with global permissions
+
 ```python
 from graphql import GraphQLResolveInfo
 from ariadne_auth.authz import AuthorizationExtension
@@ -17,8 +18,13 @@ from ariadne_auth.types import HasPermissions
 def get_permission_obj(info: GraphQLResolveInfo) -> HasPermissions:
     return info.context["my_permission_obj"]
 
+# it can be also an async function
+async def get_permission_obj_async(info: GraphQLResolveInfo) -> HasPermissions:
+    return info.context["my_permission_obj"]
+
+
 # Instantiate the AuthorizationExtension
-authz = AuthorizationExtension(permission_obj=get_permission_obj)
+authz = AuthorizationExtension(permissions_object_provider_fn=get_permission_obj)
 
 # Set list of permissions required for all resolvers 
 authz.set_required_global_permissions(["user:logged_in"])
@@ -56,18 +62,21 @@ async def resolve_ships(obj, *_):
 @authz.require_permissions(permissions=[], ignore_global_permissions=True)
 async def resolve_ship_name(obj, *_):
     return obj["name"]
+```
 
+If needed you may also overwrite the function to get the permission object
+```python
+def get_ship_permissions(info: GraphQLResolveInfo) -> HasPermissions:
+    return info.context["my_ship_permission_obj"]
 
-# Depends on the faction, additional permissions are required
-@faction.field("ships")
-async def resolve_faction_ships(faction_obj, info: GraphQLResolveInfo, *_):
-    _auth = info.context["auth"]
-    if (
-        faction_obj["name"] == "Alliance to Restore the Republic"
-    ):  # Rebels faction requires additional perm to read ships
-        _auth.assert_permissions(["read:ships"])
-
-    return [_ship for _ship in SHIPS if _ship["factionId"] == faction_obj["id"]]
+@ship.field("name")
+@authz.require_permissions(
+    permissions=[],
+    ignore_global_permissions=True,
+    permissions_object_provider_fn=get_ship_permissions
+)
+async def resolve_ship_name(obj, *_):
+    return obj["name"]
 
 ```
 
@@ -77,6 +86,34 @@ async def resolve_faction_ships(faction_obj, info: GraphQLResolveInfo, *_):
 app = GraphQL(
     schema,
     http_handler=GraphQLHTTPHandler(extensions=[authz]),  # add the authz extension
+)
+```
+ 
+You may also pass `authz` instance into info.context to use it directly 
+
+use `_auth.assert_permissions` or `await _auth.assert_permissions_async` to check permissions in your resovlers
+```python
+# Depends on the faction, additional permissions are required
+@faction.field("ships")
+async def resolve_faction_ships(faction_obj, info: GraphQLResolveInfo, *_):
+    _auth = info.context["auth"]
+    if (
+        faction_obj["name"] == "Alliance to Restore the Republic"
+    ):  # Rebels faction requires additional perm to read ships
+        _auth.assert_permissions(_auth.permissions_object_provider_fn(info), ["read:ships"])
+
+    return [_ship for _ship in SHIPS if _ship["factionId"] == faction_obj["id"]]
+
+def get_context_value(request, data):
+    return {
+        **authz.generate_authz_context(request),
+    }
+
+
+app = GraphQL(
+    schema,
+    context_value=get_context_value,
+    http_handler=GraphQLHTTPHandler(extensions=[authz])
 )
 ```
 

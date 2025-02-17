@@ -5,12 +5,13 @@ build-backend = "hatchling.build"
 [project]
 name = "ariadne-auth"
 dynamic = ["version"]
-description = ''
+description = "An Ariadne extension for authorization, allowing global permissions for all resolvers and fine-grained control over required permissions for specific resolvers in GraphQL APIs."
 readme = "README.md"
 requires-python = ">=3.9"
-license = "MIT"
-keywords = []
-authors = [{ name = "Mirumee Software", email = "hello@mirumee.com" }]
+license = "BSD-3-Clause"
+license-files = ["LICENSE.txt"]
+keywords = ["ariadne", "ariadne-extension", "authorization", "permissions"]
+authors = [{ name = "Mirumee Labs", email = "hello@mirumee.com" }]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python",
@@ -18,22 +19,27 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
-  "Programming Language :: Python :: Implementation :: CPython",
-  "Programming Language :: Python :: Implementation :: PyPy",
+  "Programming Language :: Python :: 3.13",
 ]
 dependencies = [
-  "ariadne"
+  "ariadne",
+  "typing_extensions"
 ]
 
 [project.optional-dependencies]
 types = ["mypy>=1.0.0",]
 dev = [
-    'rich',
-    'uvicorn',
-  'starlette',
-  'pytest',
-  'ipdb',
+    "rich",
+    "uvicorn",
+    "starlette",
+    "ipdb",
 ]
+
+[project.urls]
+Homepage = "https://github.com/mirumee/ariadne-auth"
+Issues = "https://github.com/mirumee/ariadne-auth/issues"
+
+
 
 
 [tool.hatch.version]
@@ -41,6 +47,8 @@ path = "src/ariadne_auth/__about__.py"
 
 
 # Environment configuration
+
+## Default environment
 [tool.hatch.envs.default]
 features = ["dev", "types"]
 
@@ -49,12 +57,6 @@ PYTHONBREAKPOINT = "ipdb.set_trace"
 
 [tool.hatch.envs.default.scripts]
 ariadne_auth = "python -m ariadne_auth.test_app.__main__"
-
-[tool.hatch.envs.types]
-features = ["types"]
-
-
-[tool.hatch.envs.types.scripts]
 check = [
     "hatch fmt",
     "hatch test -a -p",
@@ -62,18 +64,41 @@ check = [
     "hatch run types:check",
 ]
 
+
+## Test environment
+[tool.hatch.envs.hatch-test.env-vars]
+PYTHONBREAKPOINT = "ipdb.set_trace"
+
+
+[tool.hatch.envs.hatch-test]
+extra-dependencies = [
+    "pytest-cov", "pytest-mock", "pytest-asyncio", "ipdb"
+]
+extra-args = ["-s"]  # to stop on ipdb breakpoint
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.9", "3.10", "3.11", "3.12", "3.13"]
+
+## Types environment
+[tool.hatch.envs.types]
+features = ["types"]
+
+[tool.hatch.envs.types.scripts]
+check = "mypy . --install-types --non-interactive"
+
 # Tool configuration
 
 ## Pytest configuration
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 
 ## Types configuration
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.9"
 files = ["src/**/*.py"]
-exclude = "tests/.*"
+exclude = ["tests/.*", "test_app/.*"]
 warn_redundant_casts = true
 warn_unused_ignores = true
 disallow_any_generics = true
@@ -96,6 +121,7 @@ branch = true
 parallel = true
 omit = [
   "src/ariadne_auth/__about__.py",
+  "src/ariadne_auth/test_app/*"
 ]
 
 [tool.coverage.paths]
@@ -131,7 +157,7 @@ ban-relative-imports = "all"
 max-complexity = 10
 
 [tool.ruff.lint.isort]
-known-first-party = ["smyth"]
+known-first-party = ["ariadne_auth"]
 
 [tool.ruff.lint.flake8-pytest-style]
 fixture-parentheses = false
