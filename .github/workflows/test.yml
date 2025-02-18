@@ -5,8 +5,19 @@ on:
     branches:
       - main
   pull_request:
+  workflow_call:
+  workflow_dispatch:
+
   schedule:
     - cron:  "0 7 * * 1,3"
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHONUNBUFFERED: "1"
+  FORCE_COLOR: "1"
 
 jobs:
   build:
