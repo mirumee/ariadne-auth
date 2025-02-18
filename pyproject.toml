@@ -56,7 +56,7 @@ features = ["dev", "types"]
 PYTHONBREAKPOINT = "ipdb.set_trace"
 
 [tool.hatch.envs.default.scripts]
-ariadne_auth = "python -m ariadne_auth.test_app.__main__"
+ariadne_auth = "python -m test_app.__main__"
 check = [
     "hatch fmt",
     "hatch test -a -p",
@@ -116,12 +116,11 @@ ignore_missing_imports = true
 ## Coverage configuration
 
 [tool.coverage.run]
-source_pkgs = ["ariadne_auth", "tests"]
+source_pkgs = ["ariadne_auth"]
 branch = true
 parallel = true
 omit = [
   "src/ariadne_auth/__about__.py",
-  "src/ariadne_auth/test_app/*"
 ]
 
 [tool.coverage.paths]

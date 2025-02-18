@@ -1,10 +1,7 @@
-### Run test app 
-
-#### To run test application use: `hatch run ariadne_auth`
-Note that `user_id` is hardcoded in `app.py:104`
-
-
 # How to use:
+```shell
+pip install ariadne-auth
+```
 
 ### Set your Authorization Extension with global permissions
 
@@ -117,6 +114,12 @@ app = GraphQL(
 )
 ```
 
+
+## Run test app 
+The repository contains a test application that demonstrates how to use the library
+
+#### To run test application use: `hatch run ariadne_auth`
+Note that `user_id` is hardcoded in `app.py:104`
 
 
 ### Example request

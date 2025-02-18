@@ -1,7 +1,7 @@
 from starlette.applications import Starlette
 from starlette.routing import Mount
 
-from ariadne_auth.test_app.app import app as gql_app
+from test_app.app import app as gql_app
 
 app = Starlette(
     routes=[
@@ -13,7 +13,7 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(
-        "ariadne_auth.test_app.__main__:app",
+        "test_app.__main__:app",
         reload=True,
         log_config={
             "version": 1,

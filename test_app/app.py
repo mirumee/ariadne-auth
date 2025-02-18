@@ -12,8 +12,8 @@ from ariadne.asgi.handlers import GraphQLHTTPHandler
 from graphql import GraphQLResolveInfo
 
 from ariadne_auth.authz import AuthorizationExtension
-from ariadne_auth.test_app.test_data import FACTIONS, SHIPS
 from ariadne_auth.types import HasPermissions, PermissionsList
+from test_app.test_data import FACTIONS, SHIPS
 
 BASE_DIR = Path(__file__).parent
 
