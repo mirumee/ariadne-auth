@@ -30,14 +30,16 @@ class AuthorizationExtension(Extension):
             self, obj: Any, info: GraphQLResolveInfo, *args: Any, **kwargs: Any
         ) -> Any:
             has_permissions = self.permissions_policy_fn(obj, info, *args, **kwargs)
+
             if is_awaitable(has_permissions):
                 has_permissions = await has_permissions
 
             if not has_permissions:
                 raise GraphQLErrorAuthorizationError()
 
-            if iscoroutinefunction(self.resolver):
-                return await self.resolver(obj, info, *args, **kwargs)
+            result = self.resolver(obj, info, *args, **kwargs)
+            if is_awaitable(result):
+                return await result
             return self.resolver(obj, info, *args, **kwargs)
 
     def __init__(self, permissions_object_provider_fn: PermissionsResolver) -> None:
