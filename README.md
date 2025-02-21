@@ -156,3 +156,5 @@ query {
 
 
 
+**Crafted with ❤️ by [Mirumee Software](https://mirumee.com)**
+hello@mirumee.com
