@@ -36,13 +36,13 @@ faction = ObjectType("Faction")
 
 # Set additional required permissions for specific resolvers
 @query.field("rebels")
-@authz.require_permissions(permissions=["read:rebels"])
+@authz.require_permissions(permissions=["read:rebels"])   # + "user:logged_in"
 async def resolve_rebels(*_):
     return FACTIONS[0]
 
 
 @query.field("empire")
-@authz.require_permissions(permissions=["read:empire"], ignore_global_permissions=False)
+@authz.require_permissions(permissions=["read:empire"], ignore_global_permissions=False)  # + "user:logged_in"
 async def resolve_empire(*_):
     return FACTIONS[1]
 
@@ -50,18 +50,19 @@ async def resolve_empire(*_):
 
 # Disable global permissions for specific resolver
 @query.field("ships")
-@authz.require_permissions(permissions=[], ignore_global_permissions=True)
+@authz.require_permissions(permissions=[], ignore_global_permissions=True)  # + "user:logged_in"
 async def resolve_ships(obj, *_):
     return SHIPS
 
-# Note the global permission is set on default_field_resolver it requires to disable permissions explicity
+# Note the global permission is set on default_field_resolver method
+# and it requires to disable permissions explicit for each field
 @ship.field("name")
 @authz.require_permissions(permissions=[], ignore_global_permissions=True)
 async def resolve_ship_name(obj, *_):
     return obj["name"]
 ```
 
-If needed you may also overwrite the function to get the permission object
+If needed you may also overwrite the function to get the permission object for specific resolver
 ```python
 def get_ship_permissions(info: GraphQLResolveInfo) -> HasPermissions:
     return info.context["my_ship_permission_obj"]
@@ -101,6 +102,8 @@ async def resolve_faction_ships(faction_obj, info: GraphQLResolveInfo, *_):
 
     return [_ship for _ship in SHIPS if _ship["factionId"] == faction_obj["id"]]
 
+
+
 def get_context_value(request, data):
     return {
         **authz.generate_authz_context(request),
@@ -119,7 +122,7 @@ app = GraphQL(
 The repository contains a test application that demonstrates how to use the library
 
 #### To run test application use: `hatch run ariadne_auth`
-Note that `user_id` is hardcoded in `app.py:104`
+Note that `user_id` is hardcoded in `test_app/app.py:148`
 
 
 ### Example request
