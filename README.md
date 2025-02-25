@@ -157,7 +157,12 @@ query {
 }
 ```
 
+## Versioning policy ##
+ariadne-auth follows a custom versioning scheme where the minor version increases for breaking changes, while the patch version increments for bug fixes, enhancements, and other non-breaking updates.
 
+Since ariadne-auth has not yet reached a stable API, this approach is in place until version 1.0.0. Once the API stabilizes, the project will adopt Semantic Versioning.
+
+----------------
 
 **Crafted with ❤️ by [Mirumee Software](https://mirumee.com)**
 hello@mirumee.com
