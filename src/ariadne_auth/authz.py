@@ -40,7 +40,7 @@ class AuthorizationExtension(Extension):
             result = self.resolver(obj, info, *args, **kwargs)
             if is_awaitable(result):
                 return await result
-            return self.resolver(obj, info, *args, **kwargs)
+            return result
 
     def __init__(self, permissions_object_provider_fn: PermissionsResolver) -> None:
         self.global_permissions: PermissionsList = []
