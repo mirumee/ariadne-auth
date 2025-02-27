@@ -50,7 +50,7 @@ async def resolve_empire(*_):
 
 # Disable global permissions for specific resolver
 @query.field("ships")
-@authz.require_permissions(permissions=[], ignore_global_permissions=True)  # + "user:logged_in"
+@authz.require_permissions(permissions=[], ignore_global_permissions=True)
 async def resolve_ships(obj, *_):
     return SHIPS
 
@@ -87,7 +87,7 @@ app = GraphQL(
 )
 ```
  
-You may also pass `authz` instance into info.context to use it directly 
+You may also pass `authz` instance into `info.context` to use it directly
 
 use `_auth.assert_permissions` or `await _auth.assert_permissions_async` to check permissions in your resovlers
 ```python
