@@ -1,3 +1,5 @@
+from unittest import mock
+
 import pytest
 from pytest_mock import MockerFixture
 
@@ -74,7 +76,8 @@ async def test_require_permissions_no_permissions_async(
     assert await decorated_resolver(None, None) == "Hello, World!"
 
 
-def test_require_permissions_no_permissions_global_permissions_disabled(
+@pytest.mark.asyncio
+async def test_require_permissions_no_permissions_global_permissions_disabled(
     test_authz: AuthorizationExtension,
 ):
     """Permissions are set, global permissions is set but disabled"""
@@ -82,7 +85,7 @@ def test_require_permissions_no_permissions_global_permissions_disabled(
     decorated_resolver = test_authz.require_permissions(
         [], ignore_global_permissions=True
     )(resolver)
-    assert decorated_resolver(None, None) == "Hello, World!"
+    assert await test_authz.resolve(decorated_resolver, None, None) == "Hello, World!"
 
 
 @pytest.mark.asyncio
@@ -220,3 +223,39 @@ async def test_resolve_async_resolver(test_authz: AuthorizationExtension):
         await test_authz.resolve(async_resolver, None, None)
         == "Hello, World! From async resolver"
     )
+
+
+@pytest.mark.asyncio
+async def test_wrapped_extension(test_authz: AuthorizationExtension):
+    test_authz.set_required_global_permissions(["read:Comments"])
+    decorated_resolver = test_authz.require_permissions(
+        [], ignore_global_permissions=True
+    )(resolver)
+
+    async def next_extension(*args, **kwargs):
+        return decorated_resolver(*args, **kwargs)
+
+    with pytest.raises(GraphQLErrorAuthorizationError):
+        await test_authz.resolve(next_extension, None, None)
+
+    mocked_info = mock.Mock(
+        parent_type=mock.Mock(fields={"field": mock.Mock(resolve=decorated_resolver)}),
+        field_name="field",
+    )
+    assert (
+        await test_authz.resolve(next_extension, None, mocked_info) == "Hello, World!"
+    )
+
+
+@pytest.mark.asyncio
+async def test_wrapped_resolver(test_authz: AuthorizationExtension):
+    permission_object = permissions_object_factory(["read:Comments", "read:Posts"])
+    test_authz.permissions_object_provider_fn = lambda _: permission_object
+
+    test_authz.set_required_global_permissions(["read:Comments"])
+    decorated_resolver = test_authz.require_permissions(["read:Posts"])(resolver)
+
+    def wrapped_resolver(obj, info, *args, **kwargs):
+        return decorated_resolver(obj, info, "extra", *args, **kwargs)
+
+    assert await test_authz.resolve(wrapped_resolver, None, None) == "Hello, World!"

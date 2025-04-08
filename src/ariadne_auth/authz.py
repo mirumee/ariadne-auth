@@ -63,7 +63,9 @@ class AuthorizationExtension(Extension):
         permissions: PermissionsList,
         permissions_object_provider_fn: PermissionsResolver,
     ) -> Callable[..., Coroutine[Any, Any, bool]]:
-        async def inner(obj: Any, info: GraphQLResolveInfo, **kwargs: Any) -> bool:
+        async def inner(
+            obj: Any, info: GraphQLResolveInfo, *args: Any, **kwargs: Any
+        ) -> bool:
             if iscoroutinefunction(permissions_object_provider_fn):
                 perm_obj = await permissions_object_provider_fn(info)
             else:
@@ -82,7 +84,10 @@ class AuthorizationExtension(Extension):
     ) -> Resolver:
         def decorator(resolver: Resolver) -> Resolver:
             if not permissions and ignore_global_permissions:
-                return resolver
+                return self.PermissionChecker(
+                    resolver,
+                    lambda *args, **kwargs: True,
+                )
 
             # Append global permissions if ignore_global_permissions is False
             _permissions = (
@@ -132,7 +137,11 @@ class AuthorizationExtension(Extension):
         info: GraphQLResolveInfo,
         **kwargs: Any,
     ) -> Any:
-        if not isinstance(next_, self.PermissionChecker) and self.global_permissions:
+        try:
+            resolver = info.parent_type.fields[info.field_name].resolve
+        except (AttributeError, KeyError):
+            resolver = next_
+        if not isinstance(resolver, self.PermissionChecker) and self.global_permissions:
             next_ = self.PermissionChecker(
                 next_,
                 self.permissions_policy_fn(
